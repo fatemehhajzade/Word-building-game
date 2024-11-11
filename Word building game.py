@@ -28,6 +28,8 @@ class WordGame:
         self.current_word = ""
         self.used_letters = set()  # مجموعه حروف استفاده شده
 
+        self.letter_buttons = {}  # دیکشنری برای نگه داشتن دکمه‌ها
+
         self.create_widgets()
 
     def create_widgets(self):
@@ -48,9 +50,10 @@ class WordGame:
         for i, letter in enumerate(LETTERS):
             row = i // 8
             col = i % 8
-            letter_button = ttk.Button(letters_frame, text=letter, width=5,
-                                       command=lambda l=letter: self.add_letter(l))
+            letter_button = ttk.Button(letters_frame, text=letter, width=5)
             letter_button.grid(row=row, column=col, padx=2, pady=2)
+            letter_button.configure(command=lambda l=letter, btn=letter_button: self.add_letter(l, btn))
+            self.letter_buttons[letter_button] = letter
 
         # فریم نمایش کلمه فعلی
         word_frame = ttk.Frame(main_frame, padding="10")
@@ -58,7 +61,7 @@ class WordGame:
 
         ttk.Label(word_frame, text=":کلمه فعلی", font=("Arial", 14)).pack(side=tk.RIGHT, padx=(10, 0))
         self.current_word_var = tk.StringVar()
-        current_word_entry = ttk.Entry(word_frame, textvariable=self.current_word_var, font=("Arial", 14), 
+        current_word_entry = ttk.Entry(word_frame, textvariable=self.current_word_var, font=("Arial", 14),
                                        state='readonly', width=30, justify='right')
         current_word_entry.pack(side=tk.RIGHT, expand=True, fill=tk.X, padx=10)
 
@@ -91,9 +94,12 @@ class WordGame:
 
         self.update_time()
 
-    def add_letter(self, letter):
-        self.current_word += letter
-        self.current_word_var.set(self.current_word)
+    def add_letter(self, letter, button):
+        if letter not in self.used_letters:
+            self.current_word += letter
+            self.current_word_var.set(self.current_word)
+            self.used_letters.add(letter)
+            button.config(state=tk.DISABLED, text=f"{letter} ×")
 
     def clear_word(self):
         self.current_word = ""
@@ -103,7 +109,6 @@ class WordGame:
         if not self.current_word:
             return
 
-        
         if self.current_word in self.user_words:
             messagebox.showwarning("کلمه تکراری", "این کلمه قبلاً وارد شده است.")
         elif self.is_valid_word(self.current_word):
@@ -137,16 +142,11 @@ class WordGame:
                 score += 2
             elif len(word) >= 5:
                 score += 4
-        
+
         unused_letters = set(LETTERS) - self.used_letters
         negative_score = len(unused_letters)
-        
-        return score, negative_score
 
-    def add_letter(self, letter):
-        if letter not in self.current_word:  # جلوگیری از حروف تکراری در یک کلمه
-            self.current_word += letter
-            self.current_word_var.set(self.current_word)
+        return score, negative_score
 
     def format_result(self, score, negative_score):
         result = f"امتیاز مثبت: {score}\n"
@@ -170,5 +170,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = WordGame(root)
     root.mainloop()
-
-
